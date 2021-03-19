@@ -1,5 +1,5 @@
 <launch> 
-  <group ns="scout_1">
+  <group ns="small_scout_1">
     <param name="/use_sim_time" value="true"/>
     <node pkg="waypoint_nav"
           name="waypoint_nav"

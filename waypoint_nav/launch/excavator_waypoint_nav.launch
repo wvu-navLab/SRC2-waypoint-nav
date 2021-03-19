@@ -2,7 +2,7 @@
   <!-- excavator_driving_tools launch file -->
   
 
-  <group ns="excavator_1">
+  <group ns="small_excavator_1">
 
     <param name="/use_sim_time" value="true"/>
 
