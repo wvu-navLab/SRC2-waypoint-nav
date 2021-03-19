@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.8.3)
-project(drive_controller)
+cmake_minimum_required(VERSION 3.0.2)
+project(waypoint_nav)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -8,13 +8,15 @@ project(drive_controller)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  geometry_msgs
+  message_generation
+  message_runtime
   roscpp
   rospy
-  sensor_msgs
   std_msgs
-  tf2_eigen
-  tf2_ros
+  geometry_msgs
+  sensor_msgs
+  nav_msgs
+  srcp2_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -53,16 +55,14 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 # add_message_files(
 #   FILES
-#   Message1.msg
-#   Message2.msg
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  SetGoal.srv
+  Interrupt.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -72,10 +72,13 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   geometry_msgs#   sensor_msgs#   std_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+  sensor_msgs
+  nav_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -107,9 +110,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES drive_controller
-#  CATKIN_DEPENDS geometry_msgs roscpp rospy sensor_msgs std_msgs tf2_eigen tf2_ros
+  INCLUDE_DIRS include
+#  LIBRARIES waypoint_nav
+  CATKIN_DEPENDS message_runtime std_msgs geometry_msgs nav_msgs sensor_msgs
 #  DEPENDS system_lib
 )
 
@@ -120,29 +123,15 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+ include
+  ~/srcp2-competitors/ros_workspace/install/include
   ${catkin_INCLUDE_DIRS}
 )
 
 
-
-########################### adding source files #########################
-## wypoints navigation
-add_executable(waypoints_nav src/waypoints_nav.cpp)
-add_dependencies(waypoints_nav ${catkin_EXPORTED_TARGETS})
-target_link_libraries(waypoints_nav ${catkin_LIBRARIES})
-
-## lidar obstacle avoidance
-add_executable(avoidance_lidar src/avoidance_lidar.cpp)
-add_dependencies(avoidance_lidar ${catkin_EXPORTED_TARGETS})
-target_link_libraries(avoidance_lidar ${catkin_LIBRARIES})
-
-
-#############################################################################
-
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/drive_controller.cpp
+#   src/${PROJECT_NAME}/waypoint_nav.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -153,7 +142,19 @@ target_link_libraries(avoidance_lidar ${catkin_LIBRARIES})
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/drive_controller_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/waypoint_nav_node.cpp)
+
+add_executable(avoidance_lidar src/avoidance_lidar.cpp)
+target_link_libraries(avoidance_lidar ${catkin_LIBRARIES})
+# add_dependencies(avoidance_lidar waypoint_nav_generate_messages_cpp)
+
+add_executable(waypoint_nav src/waypoint_nav.cpp)
+target_link_libraries(waypoint_nav ${catkin_LIBRARIES})
+add_dependencies(waypoint_nav waypoint_nav_generate_messages_cpp)
+
+add_executable(imu_rpy_noise src/imu_rpy_noise.cpp)
+target_link_libraries(imu_rpy_noise ${catkin_LIBRARIES})
+# add_dependencies(imu_rpy_noise waypoint_nav_generate_messages_cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -170,6 +171,19 @@ target_link_libraries(avoidance_lidar ${catkin_LIBRARIES})
 #   ${catkin_LIBRARIES}
 # )
 
+target_link_libraries(avoidance_lidar 
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(waypoint_nav 
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(imu_rpy_noise 
+  ${catkin_LIBRARIES}
+)
+
+
 #############
 ## Install ##
 #############
@@ -179,7 +193,7 @@ target_link_libraries(avoidance_lidar ${catkin_LIBRARIES})
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
+# catkin_install_python(PROGRAMS
 #   scripts/my_python_script
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
@@ -199,11 +213,11 @@ target_link_libraries(avoidance_lidar ${catkin_LIBRARIES})
 # )
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".svn" EXCLUDE
+)
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
@@ -217,7 +231,7 @@ target_link_libraries(avoidance_lidar ${catkin_LIBRARIES})
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_drive_controller.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_waypoint_nav.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

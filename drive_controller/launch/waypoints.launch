@@ -1,9 +1,0 @@
-<launch>
-  <rosparam command="load" file="$(find drive_controller)/waypoints.yaml" />
-
-  <node pkg="drive_controller" type="waypoints_nav" name="waypoints_nav" >
-  </node>
-  <node pkg="drive_controller" type="avoidance_lidar" name="avoidance_lidar" >
-  </node>
-
-</launch>
