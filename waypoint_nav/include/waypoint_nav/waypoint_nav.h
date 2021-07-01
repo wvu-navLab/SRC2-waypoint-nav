@@ -34,6 +34,7 @@
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include <waypoint_nav/SetGoal.h>
+#include <waypoint_nav/GoToGoal.h>
 #include <waypoint_nav/Interrupt.h>
 
 #define ARRIVED 0
@@ -51,7 +52,7 @@ class WaypointNavigation
 public:
     WaypointNavigation(ros::NodeHandle & nh);
 
-    void commandVelocity();
+    bool commandVelocity();
 
     bool active_ = false;
 
@@ -72,10 +73,12 @@ private:
     ros::Publisher pubArrivedAtWaypoint;
 
     ros::ServiceServer srv_set_goal_;
+    ros::ServiceServer srv_go_to_goal_;
     ros::ServiceServer srv_interrupt_;
 
     double avoid_angle_ = 0.0;
     double Kp_yaw_ = 5.0;
+    double thresh_ =.75;
     bool rr_ = false;
     bool ll_ = false;
 
@@ -89,9 +92,10 @@ private:
     void odometryCallback(const nav_msgs::Odometry::ConstPtr& msg);
     void smachCallback(const std_msgs::Int64::ConstPtr& msg);
     void goalCallback(const geometry_msgs::Pose::ConstPtr& msg);
-    void avoidObstacleCallback(const std_msgs::Float64::ConstPtr& msg);
+  //  void avoidObstacleCallback(const std_msgs::Float64::ConstPtr& msg);
 
     bool setGoal(waypoint_nav::SetGoal::Request &req, waypoint_nav::SetGoal::Response &res);
+    bool goToGoal(waypoint_nav::GoToGoal::Request &req, waypoint_nav::GoToGoal::Response &res);
     bool interrupt(waypoint_nav::Interrupt::Request &req, waypoint_nav::Interrupt::Response &res);
 };
 

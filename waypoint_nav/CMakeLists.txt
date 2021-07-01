@@ -61,6 +61,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   SetGoal.srv
+  GoToGoal.srv
   Interrupt.srv
 )
 
@@ -171,15 +172,15 @@ target_link_libraries(imu_rpy_noise ${catkin_LIBRARIES})
 #   ${catkin_LIBRARIES}
 # )
 
-target_link_libraries(avoidance_lidar 
+target_link_libraries(avoidance_lidar
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(waypoint_nav 
+target_link_libraries(waypoint_nav
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(imu_rpy_noise 
+target_link_libraries(imu_rpy_noise
   ${catkin_LIBRARIES}
 )
 

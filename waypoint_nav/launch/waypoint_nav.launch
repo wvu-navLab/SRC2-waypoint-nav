@@ -1,10 +1,7 @@
 <launch>
-  <group ns="small_hauler_1">
-    <param name="/use_sim_time" value="true"/>
     <node pkg="waypoint_nav"
           name="waypoint_nav"
           type="waypoint_nav"
           output="screen">
     </node>
-  </group>
 </launch>

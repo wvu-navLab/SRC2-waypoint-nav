@@ -17,7 +17,7 @@ WaypointNavigation::WaypointNavigation(ros::NodeHandle & nh)
     // Subscriber
     subOdom = nh_.subscribe("localization/odometry/sensor_fusion", 10, &WaypointNavigation::odometryCallback, this);
     subSmach = nh_.subscribe("state_machine/state", 10, &WaypointNavigation::smachCallback, this);
-    subAvoidDirection = nh_.subscribe("driving/direction", 10, &WaypointNavigation::avoidObstacleCallback, this);
+    //subAvoidDirection = nh_.subscribe("driving/direction", 10, &WaypointNavigation::avoidObstacleCallback, this);
 
     // Publisher
     pubCmdVel = nh_.advertise<geometry_msgs::Twist>("driving/cmd_vel", 10);
@@ -27,6 +27,7 @@ WaypointNavigation::WaypointNavigation(ros::NodeHandle & nh)
 
     // Service Servers
     srv_set_goal_ = nh_.advertiseService("navigation/set_goal", &WaypointNavigation::setGoal, this);
+    srv_go_to_goal_ = nh_.advertiseService("navigation/go_to_goal", &WaypointNavigation::goToGoal, this);
     srv_interrupt_ = nh_.advertiseService("navigation/interrupt", &WaypointNavigation::interrupt, this);
 
 }
@@ -60,6 +61,7 @@ bool WaypointNavigation::interrupt(waypoint_nav::Interrupt::Request &req, waypoi
     else
     {
         active_ = true;
+        ROS_INFO_STREAM("WAYPOINT NAV SET ACTIVE");
     }
     res.success = true;
     return true;
@@ -86,6 +88,37 @@ bool WaypointNavigation::setGoal(waypoint_nav::SetGoal::Request &req, waypoint_n
     return true;
 }
 
+
+bool WaypointNavigation::goToGoal(waypoint_nav::GoToGoal::Request &req, waypoint_nav::GoToGoal::Response &res)
+{
+    if (req.start == true)
+    {
+        goalPos_ = req.goal;
+        thresh_ = req.thresh;
+        firstGoal_ = true;
+      //  active_ = true;
+        ros::Time timeOutTimer = ros::Time::now();
+        ros::Duration timeOutDuration(req.timeOut);
+        bool arrived = false;
+        while(!arrived && ((ros::Time::now() - timeOutTimer) < timeOutDuration))
+        {
+              ROS_INFO("Waypoint Nav Commanding Vel");
+              arrived = commandVelocity();
+              ros::spinOnce();
+
+        }
+        res.success = arrived;
+    }
+    else
+    {
+        goalPos_ = localPos_curr_;
+        res.success = false;
+    }
+//    active_ =false;
+    return true;
+}
+
+
 void WaypointNavigation::smachCallback(const std_msgs::Int64::ConstPtr & msg)
 {
     if (msg->data == TRAV_STATE)
@@ -94,36 +127,36 @@ void WaypointNavigation::smachCallback(const std_msgs::Int64::ConstPtr & msg)
     }
 }
 
-void WaypointNavigation::avoidObstacleCallback(const std_msgs::Float64::ConstPtr& msg)
-{
-   if (msg->data > 0 && msg->data < 0.758 )
-   {
-        rr_ = true;
-        ll_ = false;
-        avoid_angle_ = 0.758;
-    }
-    else if(msg->data > 0 && msg->data > 0.758) {
-        ll_ = true;
-        rr_ = false;
-        avoid_angle_ = msg->data;
-    }
-    else if(msg->data < 0 && msg->data > -0.758) {
-        ll_ = true;
-        rr_ = false;
-        avoid_angle_ = -0.758;
-    }
-    else if(msg->data < 0 && msg->data < -0.758) {
-        ll_ = true;
-        rr_ = false;
-        avoid_angle_ = msg->data;
-    }
-    else if(msg->data == 0) {
-        rr_ = false;
-        ll_ = false;
-    }
-}
+// void WaypointNavigation::avoidObstacleCallback(const std_msgs::Float64::ConstPtr& msg)
+// {
+//    if (msg->data > 0 && msg->data < 0.758 )
+//    {
+//         rr_ = true;
+//         ll_ = false;
+//         avoid_angle_ = 0.758;
+//     }
+//     else if(msg->data > 0 && msg->data > 0.758) {
+//         ll_ = true;
+//         rr_ = false;
+//         avoid_angle_ = msg->data;
+//     }
+//     else if(msg->data < 0 && msg->data > -0.758) {
+//         ll_ = true;
+//         rr_ = false;
+//         avoid_angle_ = -0.758;
+//     }
+//     else if(msg->data < 0 && msg->data < -0.758) {
+//         ll_ = true;
+//         rr_ = false;
+//         avoid_angle_ = msg->data;
+//     }
+//     else if(msg->data == 0) {
+//         rr_ = false;
+//         ll_ = false;
+//     }
+// }
 
-void WaypointNavigation::commandVelocity()
+bool WaypointNavigation::commandVelocity()
 {
     std_msgs::Int64 status;
     std_msgs::Bool arrived;
@@ -152,7 +185,7 @@ void WaypointNavigation::commandVelocity()
     // ROS_INFO_STREAM("localPos_curr_.position"<<localPos_curr_);
     // ROS_INFO_STREAM("yaw: "<<yaw);
 
-    vd = 1.5;
+    vd = 0.4;
     // vd = 0.4;
     // if (vd<1)
     // {
@@ -162,7 +195,7 @@ void WaypointNavigation::commandVelocity()
     // ev = vd-vFB;
     ev = vd/2;
 
-    if (pf > 0.2)
+    if (pf > thresh_)
     {
         phi_d = atan2(ey,ex);
 
@@ -201,29 +234,30 @@ void WaypointNavigation::commandVelocity()
             cmd_vel.angular.z = Kp_yaw_*et;
             // ROS_INFO_STREAM("Double Ackermann");
         }
-        if (rr_ == true && ll_ == false)
-        {
-            cmd_vel.linear.x = ev*cos(avoid_angle_);
-            cmd_vel.linear.y = ev*sin(avoid_angle_);
-            cmd_vel.linear.z = 0.0;
-            cmd_vel.angular.x = 0.0;
-            cmd_vel.angular.y = 0.0;
-            cmd_vel.angular.z = 0.0;
-            // ROS_INFO_STREAM("Crab motion");
-        }
-        if (rr_ == false && ll_ == true)
-        {
-            cmd_vel.linear.x = ev*cos(avoid_angle_);
-            cmd_vel.linear.y = ev*sin(avoid_angle_);
-            cmd_vel.linear.z = 0.0;
-            cmd_vel.angular.x = 0.0;
-            cmd_vel.angular.y = 0.0;
-            cmd_vel.angular.z = 0.0;
-            // ROS_INFO_STREAM("Crab motion");
-        }
+        // if (rr_ == true && ll_ == false)
+        // {
+        //     cmd_vel.linear.x = ev*cos(avoid_angle_);
+        //     cmd_vel.linear.y = ev*sin(avoid_angle_);
+        //     cmd_vel.linear.z = 0.0;
+        //     cmd_vel.angular.x = 0.0;
+        //     cmd_vel.angular.y = 0.0;
+        //     cmd_vel.angular.z = 0.0;
+        //     // ROS_INFO_STREAM("Crab motion");
+        // }
+        // if (rr_ == false && ll_ == true)
+        // {
+        //     cmd_vel.linear.x = ev*cos(avoid_angle_);
+        //     cmd_vel.linear.y = ev*sin(avoid_angle_);
+        //     cmd_vel.linear.z = 0.0;
+        //     cmd_vel.angular.x = 0.0;
+        //     cmd_vel.angular.y = 0.0;
+        //     cmd_vel.angular.z = 0.0;
+        //     // ROS_INFO_STREAM("Crab motion");
+        // }
         status.data = GOING;
         arrived.data = false;
-    }
+
+        }
     else
     {
         cmd_vel.linear.x = 0.0;
@@ -235,8 +269,9 @@ void WaypointNavigation::commandVelocity()
 
         status.data = ARRIVED;
         arrived.data = true;
+
     }
-    // ROS_INFO_STREAM("Commanded vel" << cmd_vel);
+     ROS_INFO_STREAM(" Waypoint Nav Commanded vel" << cmd_vel);
 
     unreachable.data = false;
 
@@ -246,6 +281,7 @@ void WaypointNavigation::commandVelocity()
         pubNavStatus.publish(status);
         pubArrivedAtWaypoint.publish(arrived);
         pubWaypointUnreachable.publish(unreachable);
+        return arrived.data;
     }
 }
 
