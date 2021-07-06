@@ -283,6 +283,8 @@ bool WaypointNavigation::commandVelocity()
         pubWaypointUnreachable.publish(unreachable);
         return arrived.data;
     }
+
+    return false;
 }
 
 /*!
