@@ -224,15 +224,25 @@ bool WaypointNavigation::commandVelocity()
             cmd_vel.angular.z = 0.4;
             // ROS_INFO_STREAM("Rotate in place");
         }
-        if (abs(et) < 0.3)
+        // if (abs(et) < M_PI_4)
+        // {
+        //     cmd_vel.linear.x = vd;
+        //     cmd_vel.linear.y = 0.0;
+        //     cmd_vel.linear.z = 0.0;
+        //     cmd_vel.angular.x = 0.0;
+        //     cmd_vel.angular.y = 0.0;
+        //     cmd_vel.angular.z = Kp_yaw_*et;
+        //     // ROS_INFO_STREAM("Double Ackermann");
+        // }
+        if (abs(et) < M_PI_4)
         {
-            cmd_vel.linear.x = vd;
-            cmd_vel.linear.y = 0.0;
+            cmd_vel.linear.x = ev*(ex/pf)*cos(yaw) + ev*(ey/pf)*sin(yaw);
+            cmd_vel.linear.y = - ev*(ex/pf)*sin(yaw) + ev*(ey/pf)*cos(yaw);
             cmd_vel.linear.z = 0.0;
             cmd_vel.angular.x = 0.0;
             cmd_vel.angular.y = 0.0;
-            cmd_vel.angular.z = Kp_yaw_*et;
-            // ROS_INFO_STREAM("Double Ackermann");
+            cmd_vel.angular.z = 0.0;
+            // ROS_INFO_STREAM("Crab motion");
         }
         // if (rr_ == true && ll_ == false)
         // {
@@ -257,7 +267,7 @@ bool WaypointNavigation::commandVelocity()
         status.data = GOING;
         arrived.data = false;
 
-        }
+    }
     else
     {
         cmd_vel.linear.x = 0.0;
