@@ -1,5 +1,6 @@
 bool start
 geometry_msgs/Pose goal
+int64 side
 float64 thresh
 float64 timeOut
 ---

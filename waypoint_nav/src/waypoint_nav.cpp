@@ -95,6 +95,7 @@ bool WaypointNavigation::goToGoal(waypoint_nav::GoToGoal::Request &req, waypoint
     {
         goalPos_ = req.goal;
         thresh_ = req.thresh;
+        side_ = req.side;
         firstGoal_ = true;
       //  active_ = true;
         ros::Time timeOutTimer = ros::Time::now();
@@ -162,8 +163,8 @@ bool WaypointNavigation::commandVelocity()
     std_msgs::Bool arrived;
     std_msgs::Bool unreachable;
     geometry_msgs::Twist cmd_vel;
-    double ex, ey, et, ephi, phi_d;
-    double vd, vFB, ev;
+    double ex, ey, ex_b, ey_b, et, ephi, phi_d;
+    double Kv;
     double roll, pitch, yaw;
 
     tf::Quaternion q(
@@ -179,13 +180,17 @@ bool WaypointNavigation::commandVelocity()
 
     ex = goalPos_.position.x - localPos_curr_.position.x;
     ey = goalPos_.position.y - localPos_curr_.position.y;
-    pf = std::hypot(ex, ey);
+
+    ex_b = (ex)*cos(yaw) + (ey)*sin(yaw);
+    ey_b = -(ex)*sin(yaw) + (ey)*cos(yaw) + side_ * 0.5;
+
+    pf = std::hypot(ex_b, ey_b);
     // ROS_INFO_STREAM("error:"<<pf);
     // ROS_INFO_STREAM("goalPos_.position"<<goalPos_);
     // ROS_INFO_STREAM("localPos_curr_.position"<<localPos_curr_);
     // ROS_INFO_STREAM("yaw: "<<yaw);
 
-    vd = 0.4;
+    Kv = 0.2;
     // vd = 0.4;
     // if (vd<1)
     // {
@@ -193,7 +198,6 @@ bool WaypointNavigation::commandVelocity()
     // }
     // vFB = std::hypot(localVel_curr_.linear.x, localVel_curr_.linear.y);
     // ev = vd-vFB;
-    ev = vd/2;
 
     if (pf > thresh_)
     {
@@ -236,8 +240,8 @@ bool WaypointNavigation::commandVelocity()
         // }
         if (abs(et) < M_PI_4)
         {
-            cmd_vel.linear.x = ev*(ex/pf)*cos(yaw) + ev*(ey/pf)*sin(yaw);
-            cmd_vel.linear.y = - ev*(ex/pf)*sin(yaw) + ev*(ey/pf)*cos(yaw);
+            cmd_vel.linear.x = Kv*ex_b;
+            cmd_vel.linear.y = Kv*ey_b;
             cmd_vel.linear.z = 0.0;
             cmd_vel.angular.x = 0.0;
             cmd_vel.angular.y = 0.0;
@@ -310,7 +314,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "waypoint_nav");
     ros::NodeHandle nh("");
 
-    ros::Rate rate(100);
+    ros::Rate rate(50);
 
     ROS_INFO("Waypoint Nav Node initializing...");
     WaypointNavigation waypoint_nav(nh);
@@ -318,10 +322,10 @@ int main(int argc, char **argv)
 
     while(ros::ok())
     {
-        if (waypoint_nav.active_ == true)
-        {
-            waypoint_nav.commandVelocity();
-        }
+        // if (waypoint_nav.active_ == true)
+        // {
+        //     waypoint_nav.commandVelocity();
+        // }
         // ROS_INFO_THROTTLE(1,"active_%d",waypoint_nav.active_);
 
         ros::spinOnce();

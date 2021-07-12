@@ -76,6 +76,7 @@ private:
     ros::ServiceServer srv_go_to_goal_;
     ros::ServiceServer srv_interrupt_;
 
+    int side_ = 0;
     double avoid_angle_ = 0.0;
     double Kp_yaw_ = 5.0;
     double thresh_ =.75;
