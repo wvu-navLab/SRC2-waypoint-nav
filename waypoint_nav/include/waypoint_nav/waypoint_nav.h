@@ -80,6 +80,7 @@ private:
     double avoid_angle_ = 0.0;
     double Kp_yaw_ = 5.0;
     double thresh_ =.75;
+    double y_offset_b_ = 0.0;
     bool rr_ = false;
     bool ll_ = false;
 

@@ -2,6 +2,7 @@ bool start
 geometry_msgs/Pose goal
 int64 side
 float64 thresh
+float64 y_offset_b
 float64 timeOut
 ---
 bool success

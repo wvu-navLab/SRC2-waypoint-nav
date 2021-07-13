@@ -95,6 +95,7 @@ bool WaypointNavigation::goToGoal(waypoint_nav::GoToGoal::Request &req, waypoint
     {
         goalPos_ = req.goal;
         thresh_ = req.thresh;
+        y_offset_b_ = req.y_offset_b;
         side_ = req.side;
         firstGoal_ = true;
       //  active_ = true;
@@ -182,7 +183,7 @@ bool WaypointNavigation::commandVelocity()
     ey = goalPos_.position.y - localPos_curr_.position.y;
 
     ex_b = (ex)*cos(yaw) + (ey)*sin(yaw);
-    ey_b = -(ex)*sin(yaw) + (ey)*cos(yaw) + side_ * 1.0;
+    ey_b = -(ex)*sin(yaw) + (ey)*cos(yaw) + side_ * y_offset_b_;
 
     pf = std::hypot(ex_b, ey_b);
     // ROS_INFO_STREAM("error:"<<pf);
