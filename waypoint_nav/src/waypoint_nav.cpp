@@ -182,7 +182,7 @@ bool WaypointNavigation::commandVelocity()
     ey = goalPos_.position.y - localPos_curr_.position.y;
 
     ex_b = (ex)*cos(yaw) + (ey)*sin(yaw);
-    ey_b = -(ex)*sin(yaw) + (ey)*cos(yaw) + side_ * 0.5;
+    ey_b = -(ex)*sin(yaw) + (ey)*cos(yaw) + side_ * 1.0;
 
     pf = std::hypot(ex_b, ey_b);
     // ROS_INFO_STREAM("error:"<<pf);
