@@ -36,6 +36,7 @@
 #include <waypoint_nav/SetGoal.h>
 #include <waypoint_nav/GoToGoal.h>
 #include <waypoint_nav/Interrupt.h>
+#include <sensor_msgs/LaserScan.h>
 
 #define ARRIVED 0
 #define GOING 1
@@ -50,56 +51,64 @@
 class WaypointNavigation
 {
 public:
-    WaypointNavigation(ros::NodeHandle & nh);
+  WaypointNavigation(ros::NodeHandle &nh);
 
-    bool commandVelocity();
+  bool commandVelocity();
 
-    bool active_ = false;
+  bool active_ = false;
 
 private:
-    // Node Handle
-    ros::NodeHandle & nh_;
+  // Node Handle
+  ros::NodeHandle &nh_;
 
-    // Subscriber
-    ros::Subscriber subOdom;
-    ros::Subscriber subGoal;
-    ros::Subscriber subAvoidDirection;
-    ros::Subscriber subSmach;
+  // Subscriber
+  ros::Subscriber subOdom;
+  ros::Subscriber subGoal;
+  ros::Subscriber subLaser;
+  ros::Subscriber subSmach;
 
-    // Publisher
-    ros::Publisher pubCmdVel;
-    ros::Publisher pubNavStatus;
-    ros::Publisher pubWaypointUnreachable;
-    ros::Publisher pubArrivedAtWaypoint;
+  // Publisher
+  ros::Publisher pubCmdVel;
+  ros::Publisher pubNavStatus;
+  ros::Publisher pubWaypointUnreachable;
+  ros::Publisher pubArrivedAtWaypoint;
 
-    ros::ServiceServer srv_set_goal_;
-    ros::ServiceServer srv_go_to_goal_;
-    ros::ServiceServer srv_interrupt_;
+  ros::ServiceServer srv_set_goal_;
+  ros::ServiceServer srv_go_to_goal_;
+  ros::ServiceServer srv_interrupt_;
 
-    int side_ = 0;
-    double avoid_angle_ = 0.0;
-    double Kp_yaw_ = 5.0;
-    double thresh_ =.75;
-    double y_offset_b_ = 0.0;
-    bool rr_ = false;
-    bool ll_ = false;
+  std::string robot_name_;
+  std::string robot_id_;
 
-    bool firstOdom_;
-    bool firstGoal_;
 
-    geometry_msgs::Pose localPos_curr_;
-    geometry_msgs::Twist localVel_curr_;
-    geometry_msgs::Pose goalPos_;
+  const double LASER_THRESH = 0.8;
+  const int LASER_MAX_SET_SIZE = 20;
 
-    void odometryCallback(const nav_msgs::Odometry::ConstPtr& msg);
-    void smachCallback(const std_msgs::Int64::ConstPtr& msg);
-    void goalCallback(const geometry_msgs::Pose::ConstPtr& msg);
+  int side_ = 0;
+  double avoid_angle_ = 0.0;
+  double Kp_yaw_ = 5.0;
+  double thresh_ = .75;
+  double y_offset_b_ = 0.0;
+  bool rr_ = false;
+  bool ll_ = false;
+
+  bool firstOdom_;
+  bool firstGoal_;
+  bool flag_in_collision = false;
+
+  geometry_msgs::Pose localPos_curr_;
+  geometry_msgs::Twist localVel_curr_;
+  geometry_msgs::Pose goalPos_;
+
+  void odometryCallback(const nav_msgs::Odometry::ConstPtr &msg);
+  void smachCallback(const std_msgs::Int64::ConstPtr &msg);
+  void goalCallback(const geometry_msgs::Pose::ConstPtr &msg);
+  void laserCallback(const sensor_msgs::LaserScan::ConstPtr &msg);
   //  void avoidObstacleCallback(const std_msgs::Float64::ConstPtr& msg);
 
-    bool setGoal(waypoint_nav::SetGoal::Request &req, waypoint_nav::SetGoal::Response &res);
-    bool goToGoal(waypoint_nav::GoToGoal::Request &req, waypoint_nav::GoToGoal::Response &res);
-    bool interrupt(waypoint_nav::Interrupt::Request &req, waypoint_nav::Interrupt::Response &res);
+  bool setGoal(waypoint_nav::SetGoal::Request &req, waypoint_nav::SetGoal::Response &res);
+  bool goToGoal(waypoint_nav::GoToGoal::Request &req, waypoint_nav::GoToGoal::Response &res);
+  bool interrupt(waypoint_nav::Interrupt::Request &req, waypoint_nav::Interrupt::Response &res);
 };
-
 
 #endif // WAYPOINT_NAV_H
