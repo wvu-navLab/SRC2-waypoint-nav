@@ -20,12 +20,7 @@ WaypointNavigation::WaypointNavigation(ros::NodeHandle &nh)
     ros::shutdown();
     exit(1);
   }
-  if (ros::param::get("robot_id", robot_id_) == false)
-  {
-    ROS_FATAL("No parameter 'robot_id' specified");
-    ros::shutdown();
-    exit(1);
-  }
+
   // Subscriber
   subOdom = nh_.subscribe("localization/odometry/sensor_fusion", 10, &WaypointNavigation::odometryCallback, this);
   subSmach = nh_.subscribe("state_machine/state", 10, &WaypointNavigation::smachCallback, this);
@@ -62,11 +57,11 @@ void WaypointNavigation::laserCallback(const sensor_msgs::LaserScan::ConstPtr &m
   int set_size = 0;
   for (int i = 0; i < LASER_MAX_SET_SIZE; ++i)
   {
-    if (!isinf(ranges[i]))
-    {
+    // if (!isinf(ranges[i]))
+    // {
       min_range_sum = min_range_sum + ranges[i];
       set_size++;
-    }
+    // }
   }
   float min_range = min_range_sum / (float) set_size;
 
