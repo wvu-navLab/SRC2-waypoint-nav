@@ -81,7 +81,7 @@ private:
   std::string robot_id_;
 
 
-  const double LASER_THRESH = 0.8;
+  const double LASER_THRESH = 0.9;
   const int LASER_MAX_SET_SIZE = 20;
 
   int side_ = 0;
