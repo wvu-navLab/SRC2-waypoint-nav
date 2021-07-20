@@ -141,14 +141,20 @@ bool WaypointNavigation::goToGoal(waypoint_nav::GoToGoal::Request &req, waypoint
       arrived = commandVelocity();
       ros::spinOnce();
     }
+    geometry_msgs::Twist cmd_vel;
+    pubCmdVel.publish(cmd_vel);
     res.success = arrived;
   }
   else
   {
     goalPos_ = localPos_curr_;
+    geometry_msgs::Twist cmd_vel;
+    pubCmdVel.publish(cmd_vel);
     res.success = false;
   }
   //    active_ =false;
+  geometry_msgs::Twist cmd_vel;
+  pubCmdVel.publish(cmd_vel);
   return true;
 }
 
