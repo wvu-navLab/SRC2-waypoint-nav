@@ -332,8 +332,10 @@ bool WaypointNavigation::commandVelocity()
     status.data = ARRIVED;
     arrived.data = true;
   }
-  ROS_INFO_STREAM_THROTTLE(5,"[" << robot_name_ << "] " <<"WAYPOINT NAV. Commanded Velocity: " << cmd_vel);
-
+  ROS_INFO_STREAM_THROTTLE(5,"[" << robot_name_ << "] " <<"WAYPOINT NAV. Commanded Velocity (vx,vy,wz): (" 
+                                                << cmd_vel.linear.x << ","
+                                                << cmd_vel.linear.y << ","
+                                                << cmd_vel.angular.z << ").");
   unreachable.data = false;
 
   if (firstGoal_ && firstOdom_)
