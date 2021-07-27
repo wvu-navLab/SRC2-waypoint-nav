@@ -308,7 +308,7 @@ bool WaypointNavigation::commandVelocity()
     status.data = GOING;
     arrived.data = false;
   }
-  else if (flag_in_collision)
+  else
   {
     cmd_vel.linear.x = 0.0;
     cmd_vel.linear.y = 0.0;
@@ -320,7 +320,7 @@ bool WaypointNavigation::commandVelocity()
     status.data = ARRIVED;
     arrived.data = true;
   }
-  else
+  if(flag_in_collision)
   {
     cmd_vel.linear.x = 0.0;
     cmd_vel.linear.y = 0.0;
